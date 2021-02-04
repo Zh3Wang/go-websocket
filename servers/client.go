@@ -13,7 +13,7 @@ type Client struct {
 	IsDeleted   bool            // 是否删除或下线
 	UserId      string          // 业务端标识用户ID
 	Extend      string          // 扩展字段，用户可以自定义
-	GroupList   []string
+	GroupList   []string        // 客户端属于哪个组，一个客户端对应多个组，当其下线时，需要通知所有组
 }
 
 type SendData struct {

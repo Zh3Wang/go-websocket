@@ -51,22 +51,29 @@ func initRPCServer() {
 func registerServer() {
 	if util.IsCluster() {
 		//注册租约
+		//租约的作用是检测此客户端存活状态的机制, 如果etcd检测出此客户端在指定TTL时间内未收到keepAlive
+		//则表示租约到期，客户端挂掉
+		//将租约绑定到K-V中，每个客户端代表一个K-V，如果租约到期后，触发K-V删除操作，将此客户端踢出集群中
 		ser, err := etcd.NewServiceReg(setting.EtcdSetting.Endpoints, 5)
 		if err != nil {
 			panic(err)
 		}
 
+		// 获取本机IP和端口信息，作为etcd的键(key)
 		hostPort := net.JoinHostPort(setting.GlobalSetting.LocalHost, setting.CommonSetting.RPCPort)
 		//添加key
+		//将本机客户端地址添加到etcd中
 		err = ser.PutService(define.ETCD_SERVER_LIST+hostPort, hostPort)
 		if err != nil {
 			panic(err)
 		}
 
+		// 连接etcd
 		cli, err := etcd.NewClientDis(setting.EtcdSetting.Endpoints)
 		if err != nil {
 			panic(err)
 		}
+		// 获取集群内所有服务器地址
 		_, err = cli.GetService(define.ETCD_SERVER_LIST)
 		if err != nil {
 			panic(err)

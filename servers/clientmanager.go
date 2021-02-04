@@ -148,7 +148,6 @@ func (manager *ClientManager) delClientIdMap(clientId string) {
 func (manager *ClientManager) GetByClientId(clientId string) (*Client, error) {
 	manager.ClientIdMapLock.RLock()
 	defer manager.ClientIdMapLock.RUnlock()
-
 	if client, ok := manager.ClientIdMap[clientId]; !ok {
 		return nil, errors.New("客户端不存在")
 	} else {

@@ -9,17 +9,17 @@ import (
 	"time"
 )
 
-//channel通道
+//channel通道，用于保存消息
 var ToClientChan chan clientInfo
 
-//channel通道结构体
+//channel通道结构体，保存消息的一些字段属性
 type clientInfo struct {
-	ClientId   string
-	SendUserId string
-	MessageId  string
-	Code       int
-	Msg        string
-	Data       *string
+	ClientId   string  //发送到哪个ClientId，一个客户端对应一个ClientId
+	SendUserId string  //发送者的ID
+	MessageId  string  //消息ID
+	Code       int     //状态码
+	Msg        string  //消息内容
+	Data       *string //数据？
 }
 
 type RetData struct {
@@ -48,8 +48,10 @@ func StartWebSocket() {
 
 //发送信息到指定客户端
 func SendMessage2Client(clientId string, sendUserId string, code int, msg string, data *string) (messageId string) {
+	// 生成一个UUID代表消息ID，保证消息唯一性
 	messageId = util.GenUUID()
 	if util.IsCluster() {
+		//根据clientId获取对应的服务器地址 host:port
 		addr, _, _, isLocal, err := util.GetAddrInfoAndIsLocal(clientId)
 		if err != nil {
 			log.Errorf("%s", err)
@@ -60,7 +62,7 @@ func SendMessage2Client(clientId string, sendUserId string, code int, msg string
 		if isLocal {
 			SendMessage2LocalClient(messageId, clientId, sendUserId, code, msg, data)
 		} else {
-			//发送到指定机器
+			//通过RPC发送到指定机器
 			SendRpc2Client(addr, messageId, sendUserId, clientId, code, msg, data)
 		}
 	} else {
@@ -209,7 +211,10 @@ func WriteMessage() {
 			"msg":        clientInfo.Msg,
 			"data":       clientInfo.Data,
 		}).Info("发送到本机")
+		// GetByClientId，根据ClientId获取客户端conn连接
 		if conn, err := Manager.GetByClientId(clientInfo.ClientId); err == nil && conn != nil {
+			// 如果conn连接存在
+			// 将消息接入到这个conn连接中
 			if err := Render(conn.Socket, clientInfo.MessageId, clientInfo.SendUserId, clientInfo.Code, clientInfo.Msg, clientInfo.Data); err != nil {
 				Manager.DisConnect <- conn
 				log.WithFields(log.Fields{

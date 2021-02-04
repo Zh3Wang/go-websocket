@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// 用户信息
 type accountInfo struct {
 	SystemId     string `json:"systemId"`
 	RegisterTime int64  `json:"registerTime"`
@@ -17,6 +18,7 @@ type accountInfo struct {
 
 var SystemMap sync.Map
 
+// 注册用户id
 func Register(systemId string) (err error) {
 	//校验是否为空
 	if len(systemId) == 0 {
@@ -29,6 +31,8 @@ func Register(systemId string) (err error) {
 	}
 
 	if util.IsCluster() {
+		//集群部署下，将用户ID存到etcd中
+		//所有集群共享用户ID信息，注册前先判断是否存在
 		//判断是否被注册
 		resp, err := etcd.Get(define.ETCD_PREFIX_ACCOUNT_INFO + systemId)
 		if err != nil {
@@ -48,6 +52,9 @@ func Register(systemId string) (err error) {
 			return err
 		}
 	} else {
+		// 单机部署
+		// 使用一个sync.map存储所有用户信息
+		// key为用户ID
 		if _, ok := SystemMap.Load(systemId); ok {
 			return errors.New("该系统ID已被注册")
 		}

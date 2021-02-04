@@ -28,8 +28,8 @@ func GenClientId() string {
 	return str
 }
 
-//解析redis的地址格式
-func ParseRedisAddrValue(redisValue string) (host string, port string, err error) {
+//解析地址格式
+func ParseAddrValue(redisValue string) (host string, port string, err error) {
 	if redisValue == "" {
 		err = errors.New("解析地址错误")
 		return
@@ -56,17 +56,18 @@ func IsCluster() bool {
 
 //获取client key地址信息
 func GetAddrInfoAndIsLocal(clientId string) (addr string, host string, port string, isLocal bool, err error) {
-	//解密ClientId
+	//解密ClientId = "host:port"
 	addr, err = crypto.Decrypt(clientId, []byte(setting.CommonSetting.CryptoKey))
 	if err != nil {
 		return
 	}
 
-	host, port, err = ParseRedisAddrValue(addr)
+	host, port, err = ParseAddrValue(addr)
 	if err != nil {
 		return
 	}
 
+	//判断地址是否为本机
 	isLocal = IsAddrLocal(host, port)
 	return
 }
